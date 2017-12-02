@@ -26,7 +26,7 @@ int SelectPoller::processPendingEvents(double maxWait)
     nextTimeout.tv_sec = (int)maxWait;
     nextTimeout.tv_usec = (int)((maxWait - (double)nextTimeout.tv_sec) * 1000000.0);
 
-    uint64 startTime = getTimeStamp();
+    uint64 startTime = getClock64();
     int countReady = 0;
 
 #ifdef _WIN32
@@ -40,7 +40,7 @@ int SelectPoller::processPendingEvents(double maxWait)
         countReady = select(mMaxFd+1, &readFDs, mFdWriteCount ? &writeFDs : NULL, NULL, &nextTimeout);
     }
 
-    mSpareTime += getTimeStamp() - startTime;
+    mSpareTime += getClock64() - startTime;
 
     if (countReady > 0)
     {
@@ -48,7 +48,7 @@ int SelectPoller::processPendingEvents(double maxWait)
     }
     else if (countReady == -1)
     {
-        WarningPrint("EventDispatcher::processPendingEvents() error in select() err:%s", coreStrError());
+        WarningPrint("EventDispatcher::processPendingEvents() error in select() err:%s", strerror(errno));
     }
 
     return countReady;

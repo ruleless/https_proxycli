@@ -26,6 +26,26 @@
 #include <functional>
 #include <cctype>
 #include <iterator>
+
+// unix include
+#include <errno.h>
+#include <pthread.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <signal.h>
+#include <signal.h>
+#include <dirent.h>
+#include <net/if.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+#include <netinet/ip.h>
+#include <arpa/inet.h>
+#include <sys/time.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/ioctl.h>
+#include <sys/wait.h>
+#include <sys/socket.h>
 //--------------------------------------------------------------------------
 
 //--------------------------------------------------------------------------
@@ -62,6 +82,8 @@
 #ifndef min
 # define min(a, b) ((b) < (a) ? (b) : (a))
 #endif
+
+#define LISTENQ 32
 //--------------------------------------------------------------------------
 
 //--------------------------------------------------------------------------
@@ -102,12 +124,10 @@ typedef int64_t                 int64;
 typedef int32_t                 int32;
 typedef int16_t                 int16;
 typedef int8_t                  int8;
-typedef uint64_t                uint64;
-typedef uint32_t                uint32;
-typedef uint16_t                uint16;
-typedef uint8_t                 uint8;
-typedef uint16_t                WORD;
-typedef uint32_t                DWORD;
+typedef unsigned long long      uint64;
+typedef unsigned int            uint32;
+typedef unsigned short          uint16;
+typedef unsigned char           uint8;
 
 #ifdef _LP64
 typedef int64                   intptr;
@@ -120,6 +140,95 @@ typedef uint32                  uintptr;
 #endif // #if COMPILER != COMPILER_GNU
 
 NAMESPACE_END // namespace proxy
+//--------------------------------------------------------------------------
+
+//--------------------------------------------------------------------------
+// 日志定义
+#ifdef _USE_KLOG
+#include "log/log_inc.h"
+#else
+# define DebugPrint(fmt, ...)
+# define InfoPrint(fmt, ...)
+# define WarningPrint(fmt, ...)
+# define ErrorPrint(fmt, ...)
+# define EmphasisPrint(fmt, ...)
+#endif
+//--------------------------------------------------------------------------
+
+//--------------------------------------------------------------------------
+// 套接字状态
+enum EReason
+{
+    Reason_Success             = 0,
+
+    Reason_TimerExpired        = -1,
+    Reason_NoSuchPort          = -2,
+    Reason_GeneralNetwork      = -3,
+    Reason_CorruptedPacket     = -4,
+    Reason_NonExistentEntry    = -5,
+    Reason_WindowOverflow      = -6,
+    Reason_Inactivity          = -7,
+    Reason_ResourceUnavailable = -8,
+    Reason_ClientDisconnected  = -9,
+    Reason_TransmitQueueFull   = -10,
+    Reason_ShuttingDown        = -11,
+    Reason_WebSocketError      = -12,
+};
+//--------------------------------------------------------------------------
+
+//--------------------------------------------------------------------------
+struct Packet
+{
+    char *buf;
+    size_t buflen;
+
+    Packet() : buf(NULL), buflen(0)
+    {
+    }
+
+    virtual ~Packet()
+    {
+        if (buf)
+            free(buf);
+    }
+};
+
+struct TcpPacket : public Packet
+{
+    size_t sentlen;
+
+    TcpPacket() : Packet(), sentlen(0)
+    {
+    }
+
+    virtual ~TcpPacket()
+    {
+    }
+};
+//--------------------------------------------------------------------------
+
+//--------------------------------------------------------------------------
+// 通用函数定义
+
+NAMESPACE_BEG(proxy)
+
+/*
+ * 设置套接字非阻塞
+ * return true 设置成功 false 设置失败
+ */
+bool setNonblocking(int fd);
+
+/*
+ * 获取64位计算机时钟
+ */
+uint64 getClock64();
+
+/*
+ * 获取32位计算机时钟
+ */
+uint32 getClock();
+
+NAMESPACE_END
 //--------------------------------------------------------------------------
 
 #endif // __PROXY_CLIENT_H__
