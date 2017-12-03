@@ -1,7 +1,7 @@
 #ifndef __CACHE_H__
 #define __CACHE_H__
 
-#include "proxy_client.h"
+#include "proxy_common.h"
 #include "disk_cache.h"
 
 NAMESPACE_BEG(proxy)
@@ -43,7 +43,7 @@ class Cache
         if (mLenCacheInMem+len > MAX_LEN_CACHE_IN_MEM || mLenCacheInFile > 0)
         {
             int ret = mDiskCache.write(data, len);
-            if (ret == len)
+            if (ret == (int)len)
             {
                 mLenCacheInFile += len;
                 return;
@@ -60,6 +60,18 @@ class Cache
         assert(d.data != NULL && "cache() malloc failed");
         memcpy(d.data, data, len);
         this->mCachedList.push_back(d);
+    }
+
+    void clear()
+    {
+        typename DataList::iterator it = this->mCachedList.begin();
+        for (; it != this->mCachedList.end(); ++it)
+        {
+            free((*it).data);
+        }
+        this->mCachedList.clear();
+
+        mDiskCache.clear();
     }
 
     bool flushAll()

@@ -1,7 +1,7 @@
 #ifndef __CONNECTION_H__
 #define __CONNECTION_H__
 
-#include "proxy_client.h"
+#include "proxy_common.h"
 #include "event_poller.h"
 
 NAMESPACE_BEG(proxy)

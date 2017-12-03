@@ -1,9 +1,9 @@
 ROOTDIR=..
 
-CFLAGS:=
-CXXFLAGS:=
+CFLAGS:= -I$(ROOTDIR) -D_USE_KLOG
+CXXFLAGS:= -I$(ROOTDIR) -D_USE_KLOG
 
-LDFLAGS:=
+LDFLAGS:= -L$(ROOTDIR)/lib -llog -lkmem -lpthread
 
 TARGET:=proxy.out
 

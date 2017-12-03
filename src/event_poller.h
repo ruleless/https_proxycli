@@ -1,7 +1,7 @@
 #ifndef __EVENT_POLLOER_H__
 #define __EVENT_POLLOER_H__
 
-#include "proxy_client.h"
+#include "proxy_common.h"
 #include <map>
 
 NAMESPACE_BEG(proxy)

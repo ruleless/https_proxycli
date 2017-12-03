@@ -1,7 +1,7 @@
 #ifndef __DISK_CACHE_H__
 #define __DISK_CACHE_H__
 
-#include "proxy_client.h"
+#include "proxy_common.h"
 
 NAMESPACE_BEG(proxy)
 
@@ -19,6 +19,8 @@ class DiskCache
     size_t peeksize();
 
     void rollback(size_t n);
+
+    void clear();
 
   private:
     bool _createFile();

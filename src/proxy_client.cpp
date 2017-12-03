@@ -1,37 +1,216 @@
 #include "proxy_client.h"
 
+#include "select_poller.h"
+
 NAMESPACE_BEG(proxy)
 
-bool setNonblocking(int fd)
+ProxyClient gProxyClient;
+
+ProxyClient::~ProxyClient()
+{}
+
+bool ProxyClient::initialise(const char *ip, int port)
 {
-    int fstatus = fcntl(fd, F_GETFL);
-    if (fstatus < 0)
+    if (mInited)
+    {
+        return true;
+    }
+
+    mEventPoller = new SelectPoller();
+    assert(mEventPoller && "alloc event poller failed.");
+
+    mListener = new Listener(mEventPoller);
+    assert(mListener && "alloc listener failed.");
+
+    if (!mListener->initialise(ip, port))
+    {
+        ErrorPrint("bind %s:d failed.", ip, port);
+
+        delete mListener;
+        mListener = NULL;
+
+        delete mEventPoller;
+        mEventPoller = NULL;
+
         return false;
-    
-    if (fcntl(fd, F_SETFL, fstatus|O_NONBLOCK) < 0)
+    }
+    mListener->setEventHandler(this);
+
+    mInited = true;
+    return true;
+}
+
+void ProxyClient::finalise()
+{
+    if (!mInited)
+    {
+        return;
+    }
+    mInited = false;
+
+    TunnelList::iterator it;
+    for (it = mBrokenTuns.begin(); it != mBrokenTuns.end(); it++)
+    {
+        delete *it;
+    }
+    mBrokenTuns.clear();
+
+    for (it = mFreeTuns.begin(); it != mFreeTuns.end(); it++)
+    {
+        delete *it;
+    }
+    mFreeTuns.clear();
+
+    mListener->finalise();
+
+    delete mListener;
+    mListener = NULL;
+
+    delete mEventPoller;
+    mEventPoller = NULL;
+}
+
+bool ProxyClient::setDestServer(const char *ip, int port)
+{
+    struct sockaddr_in tmpaddr;
+
+    if (inet_pton(AF_INET, ip, &tmpaddr.sin_addr) < 0)
+    {
+        ErrorPrint("[ProxyClient::setDestServer] illegal ip(%s).", ip);
         return false;
+    }
+
+    snprintf(mDestIp, sizeof(mDestIp), "%s", ip);
+    mDestPort = port;
 
     return true;
 }
 
-uint64 getClock64()
+bool ProxyClient::setProxyServer(const char *ip, int port)
 {
-#if defined (__WIN32__) || defined(_WIN32) || defined(WIN32)
-    return ::GetTickCount();
-#elif defined(unix)
-    struct timeval time;
-    gettimeofday(&time, NULL);
-    
-    uint64 value = ((uint64)time.tv_sec) * 1000 + (time.tv_usec/1000);  
-    return value;
-#else
-# error Unsupported platform!
-#endif
+    struct sockaddr_in tmpaddr;
+
+    if (inet_pton(AF_INET, ip, &tmpaddr.sin_addr) < 0)
+    {
+        ErrorPrint("[ProxyClient::setProxyServer] illegal ip(%s).", ip);
+        return false;
+    }
+
+    snprintf(mProxyIp, sizeof(mProxyIp), "%s", ip);
+    mProxyPort = port;
+
+    return true;
 }
 
-uint32 getClock()
+void ProxyClient::runLoop()
 {
-    return (uint32) (getClock64() & 0xfffffffful);
+    mbLoop = true;
+
+    while (mbLoop)
+    {
+        // 事件分发
+        mEventPoller->processPendingEvents(PER_FRAME_TIME);
+
+        // 回收断开的隧道
+        TunnelList::iterator it = mBrokenTuns.begin();
+        for (; it != mBrokenTuns.end(); it++)
+        {
+            reclaimTunnel(*it);
+        }
+        mBrokenTuns.clear();
+    }
 }
 
-NAMESPACE_END
+void ProxyClient::exitLoop()
+{
+    mbLoop = false;
+}
+
+void ProxyClient::onAccept(int connfd)
+{
+    ProxyTunnel *tun = newTunnel();
+    if (!tun)
+    {
+        ErrorPrint("[ProxyClient::onAccept] create tunnel failed. fd=%d", connfd);
+        close(connfd);
+        return;
+    }
+
+    if (!tun->acceptLocal(connfd))
+    {
+        ErrorPrint("[ProxyClient::onAccept] accept local conn failed. fd=%d", connfd);
+        close(connfd);
+        reclaimTunnel(tun);
+        return;
+    }
+
+    if (!tun->setDestServer(mDestIp, mDestPort))
+    {
+        ErrorPrint("[ProxyClient::onAccept] set dest server failed(%s:%d). fd=%d",
+                   mDestIp, mDestPort, connfd);
+        close(connfd);
+        tun->cleanup();
+        reclaimTunnel(tun);
+        return;
+    }
+
+    if (!tun->setProxyServer(mProxyIp, mProxyPort))
+    {
+        ErrorPrint("[ProxyClient::onAccept] set proxy server failed(%s:%d). fd=%d",
+                   mProxyIp, mProxyPort, connfd);
+        close(connfd);
+        tun->cleanup();
+        reclaimTunnel(tun);
+        return;
+    }
+
+    DebugPrint("[ProxyClient::onAccept] tun:%p created", tun);
+    tun->setHandler(this);
+}
+
+void ProxyClient::onClosed(ProxyTunnel *tun)
+{
+    DebugPrint("[ProxyClient::onClosed] tun:%p closed", tun);
+    tun->cleanup();
+
+    mBrokenTuns.push_back(tun);
+}
+
+void ProxyClient::onError(ProxyTunnel *tun)
+{
+    WarningPrint("[ProxyClient::onError] tun:%p error", tun);
+    tun->cleanup();
+
+    mBrokenTuns.push_back(tun);
+}
+
+ProxyTunnel *ProxyClient::newTunnel()
+{
+    if (mFreeTuns.empty())
+    {
+        return new ProxyTunnel(mEventPoller);
+    }
+
+    ProxyTunnel *t = mFreeTuns.front(); assert(t && "get from free tunlist");
+    mFreeTuns.pop_front();
+
+    return t;
+}
+
+void ProxyClient::reclaimTunnel(ProxyTunnel *tun)
+{
+    if (!tun)
+    {
+        return;
+    }
+
+    if (mFreeTuns.size() >= CACHE_TUN_SIZE)
+    {
+        delete tun;
+        return;
+    }
+
+    mFreeTuns.push_back(tun);
+}
+
+NAMESPACE_END // proxy
