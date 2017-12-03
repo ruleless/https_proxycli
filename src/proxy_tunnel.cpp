@@ -174,6 +174,8 @@ void ProxyTunnel::onRecv(Connection *pConn, const void *data, size_t datalen)
                     _onError();
                     return;
                 }
+
+                mLocalConn.send(data, datalen);
             }
             break;
         default: // 代理隧道处于非法状态
@@ -203,6 +205,7 @@ void ProxyTunnel::onError(Connection *pConn)
         mProxyConn.setEventHandler(NULL);
         mProxyConn.shutdown();
 
+        WarningPrint("connection with local occur error. reason:%s", strerror(errno));
         _onError();
     }
     else if (pConn == &mProxyConn) // 代理连接出错
@@ -214,6 +217,7 @@ void ProxyTunnel::onError(Connection *pConn)
         mLocalConn.setEventHandler(NULL);
         mLocalConn.shutdown();
 
+        WarningPrint("connection with proxy occur error. reason:%s", strerror(errno));
         _onError();
     }
     else
