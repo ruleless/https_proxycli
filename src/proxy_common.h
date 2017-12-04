@@ -49,6 +49,28 @@
 //--------------------------------------------------------------------------
 
 //--------------------------------------------------------------------------
+// 操作系统相关宏定义
+#ifndef unix
+# if __APPLE__
+#  include "TargetConditionals.h"
+#  if TARGET_IPHONE_SIMULATOR
+#  elif TARGET_OS_IPHONE
+#  elif TARGET_OS_MAC
+#   define unix
+#  else
+#   error "Unknown Apple platform"
+#  endif
+# elif __ANDROID__
+# elif __linux__
+#  define unix
+# elif __unix__
+#  define unix
+# elif defined(_POSIX_VERSION)
+# else
+#  error "Unknown compiler"
+# endif
+#endif
+
 // 编译器定义
 #define COMPILER_MICROSOFT 0
 #define COMPILER_GNU       1
