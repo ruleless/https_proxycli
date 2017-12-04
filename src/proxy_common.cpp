@@ -7,7 +7,7 @@ bool setNonblocking(int fd)
     int fstatus = fcntl(fd, F_GETFL);
     if (fstatus < 0)
         return false;
-    
+
     if (fcntl(fd, F_SETFL, fstatus|O_NONBLOCK) < 0)
         return false;
 
@@ -21,8 +21,8 @@ uint64 getClock64()
 #elif defined(unix)
     struct timeval time;
     gettimeofday(&time, NULL);
-    
-    uint64 value = ((uint64)time.tv_sec) * 1000 + (time.tv_usec/1000);  
+
+    uint64 value = ((uint64)time.tv_sec) * 1000 + (time.tv_usec/1000);
     return value;
 #else
 # error Unsupported platform!
@@ -36,7 +36,7 @@ uint32 getClock()
 
 char *strstrICase(const char *strStart, const char *strEnd, const char *substr)
 {
-	const char *p1 = strStart, *p2 = strStart, *q = NULL;	
+	const char *p1 = strStart, *p2 = strStart, *q = NULL;
 	int IsSucceed = 0;
 	int tmpDiff = 'a' - 'A';
 
@@ -85,6 +85,27 @@ char *strstrICase(const char *strStart, const char *strEnd, const char *substr)
 	}
 
 	return NULL;
+}
+
+bool isValidIp(const char *ip)
+{
+    if (!ip || !*ip)
+    {
+        return false;
+    }
+
+    struct sockaddr_in tmpaddr;
+    if (inet_pton(AF_INET, ip, &tmpaddr.sin_addr) < 0)
+    {
+        return false;
+    }
+
+    return true;
+}
+
+bool isValidPort(int port)
+{
+    return port > 0 && port <= 65535;
 }
 
 NAMESPACE_END

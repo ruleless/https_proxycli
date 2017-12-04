@@ -259,6 +259,12 @@ uint32 getClock();
 char *strstrICase(const char *strStart, const char *strEnd, const char *substr);
 
 /*
+ * 是否是合法的ip
+ */
+bool isValidIp(const char *ip);
+bool isValidPort(int port);
+
+/*
  * 字符串分割
  */
 template<typename T>
