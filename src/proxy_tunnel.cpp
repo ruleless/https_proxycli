@@ -16,7 +16,7 @@ bool ProxyTunnel::acceptLocal(int connfd)
     }
     mLocalConn.setEventHandler(this);
 
-    // Á¬½Ó´úÀí·şÎñÆ÷
+    // è¿æ¥ä»£ç†æœåŠ¡å™¨
     mProxyStatus = ProxyStatus_Closed;
     mProxyConn.setEventHandler(this);
     if (!mProxyConn.connect((const sockaddr *)&mProxySvrAddr, (socklen_t)sizeof(mProxySvrAddr)))
@@ -78,7 +78,7 @@ void ProxyTunnel::setHandler(Handler *h)
 
 void ProxyTunnel::onConnected(Connection *pConn)
 {
-    if (pConn == &mProxyConn) // Óë´úÀí·şÎñÆ÷Á¬½Ó³É¹¦
+    if (pConn == &mProxyConn) // ä¸ä»£ç†æœåŠ¡å™¨è¿æ¥æˆåŠŸ
     {
         char header[HTTP_HEADER_SIZE] = {0};
 
@@ -101,7 +101,7 @@ void ProxyTunnel::onConnected(Connection *pConn)
 
 void ProxyTunnel::onDisconnected(Connection *pConn)
 {
-    if (pConn == &mLocalConn) // Óë±¾µØ¿Í»§¶ËÁ¬½Ó¶Ï¿ª
+    if (pConn == &mLocalConn) // ä¸æœ¬åœ°å®¢æˆ·ç«¯è¿æ¥æ–­å¼€
     {
         mLocalConn.shutdown();
 
@@ -114,7 +114,7 @@ void ProxyTunnel::onDisconnected(Connection *pConn)
 
         _onClose();
     }
-    else if (pConn == &mProxyConn) // Óë´úÀí·şÎñÆ÷Á¬½Ó¶Ï¿ª
+    else if (pConn == &mProxyConn) // ä¸ä»£ç†æœåŠ¡å™¨è¿æ¥æ–­å¼€
     {
         mProxyConn.shutdown();
 
@@ -131,22 +131,22 @@ void ProxyTunnel::onDisconnected(Connection *pConn)
 
 void ProxyTunnel::onRecv(Connection *pConn, const void *data, size_t datalen)
 {
-    if (pConn == &mLocalConn) // ÊÕµ½À´×Ô±¾µØ¿Í»§¶ËµÄÊı¾İ
+    if (pConn == &mLocalConn) // æ”¶åˆ°æ¥è‡ªæœ¬åœ°å®¢æˆ·ç«¯çš„æ•°æ®
     {
-        if (ProxyStatus_Connected == mProxyStatus) // ÒÑÓë´úÀí½¨Á¢Á¬½Ó
+        if (ProxyStatus_Connected == mProxyStatus) // å·²ä¸ä»£ç†å»ºç«‹è¿æ¥
         {
             mProxyConn.send(data, datalen);
         }
         else
         {
-            mLocalCache->cache(data, datalen); // ÏÈ»º´æÆğÀ´
+            mLocalCache->cache(data, datalen); // å…ˆç¼“å­˜èµ·æ¥
         }
     }
-    else if (pConn == &mProxyConn) // ÊÕµ½À´×Ô´úÀí·şÎñÆ÷µÄÊı¾İ
+    else if (pConn == &mProxyConn) // æ”¶åˆ°æ¥è‡ªä»£ç†æœåŠ¡å™¨çš„æ•°æ®
     {
         switch (mProxyStatus)
         {
-        case ProxyStatus_Connecting: // ÒÑÏò´úÀí·şÎñÆ÷·¢ËÍCONNECTÏûÏ¢
+        case ProxyStatus_Connecting: // å·²å‘ä»£ç†æœåŠ¡å™¨å‘é€CONNECTæ¶ˆæ¯
             {
                 char *ptr = mHttpHeader + strlen(mHttpHeader);
                 char *endptr = mHttpHeader + sizeof(mHttpHeader) - 1;
@@ -166,9 +166,9 @@ void ProxyTunnel::onRecv(Connection *pConn, const void *data, size_t datalen)
                 parseHttpHeader();
             }
             break;
-        case ProxyStatus_Connected: // ÒÑ½¨Á¢´úÀíËíµÀ
+        case ProxyStatus_Connected: // å·²å»ºç«‹ä»£ç†éš§é“
             {
-                if (!mLocalConn.isConnected()) // Óë±¾µØ¿Í»§¶ËÒÑ¶Ï¿ªÁ¬½Ó
+                if (!mLocalConn.isConnected()) // ä¸æœ¬åœ°å®¢æˆ·ç«¯å·²æ–­å¼€è¿æ¥
                 {
                     ErrorPrint("[ProxyTunnel::onRecv] connection with local client is already closed.");
                     mProxyConn.setEventHandler(NULL);
@@ -179,7 +179,7 @@ void ProxyTunnel::onRecv(Connection *pConn, const void *data, size_t datalen)
                 mLocalConn.send(data, datalen);
             }
             break;
-        default: // ´úÀíËíµÀ´¦ÓÚ·Ç·¨×´Ì¬
+        default: // ä»£ç†éš§é“å¤„äºéæ³•çŠ¶æ€
             ErrorPrint("[ProxyTunnel::onRecv] illegal proxy status(%d).", mProxyStatus);
             mProxyConn.setEventHandler(NULL);
             _onError();
@@ -194,7 +194,7 @@ void ProxyTunnel::onRecv(Connection *pConn, const void *data, size_t datalen)
 
 void ProxyTunnel::onError(Connection *pConn)
 {
-    if (pConn == &mLocalConn) // ±¾µØÁ¬½Ó³ö´í
+    if (pConn == &mLocalConn) // æœ¬åœ°è¿æ¥å‡ºé”™
     {
         mLocalConn.shutdown();
 
@@ -209,7 +209,7 @@ void ProxyTunnel::onError(Connection *pConn)
         WarningPrint("connection with local occur error. reason:%s", strerror(errno));
         _onError();
     }
-    else if (pConn == &mProxyConn) // ´úÀíÁ¬½Ó³ö´í
+    else if (pConn == &mProxyConn) // ä»£ç†è¿æ¥å‡ºé”™
     {
         mProxyConn.setEventHandler(NULL);
         mProxyConn.shutdown();
@@ -248,8 +248,8 @@ void ProxyTunnel::parseHttpHeader()
     {
         if (strstrICase(mHttpHeader, mHttpHeader + strlen(mHttpHeader), SSL_CONNECTION_RESPONSE_OK))
         {
-            mProxyStatus = ProxyStatus_Connected; // ´úÀíËíµÀ½¨Á¢³É¹¦
-            flushLocal(); // ÏÈ½«»º´æµÄ±¾µØ¿Í»§¶Ë·¢ËÍÉÏÀ´µÄÊı¾İ·¢ËÍ³öÈ¥
+            mProxyStatus = ProxyStatus_Connected; // ä»£ç†éš§é“å»ºç«‹æˆåŠŸ
+            flushLocal(); // å…ˆå°†ç¼“å­˜çš„æœ¬åœ°å®¢æˆ·ç«¯å‘é€ä¸Šæ¥çš„æ•°æ®å‘é€å‡ºå»
         }
         else
         {

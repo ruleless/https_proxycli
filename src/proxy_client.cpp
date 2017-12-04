@@ -109,10 +109,10 @@ void ProxyClient::runLoop()
 
     while (mbLoop)
     {
-        // ÊÂ¼ş·Ö·¢
+        // äº‹ä»¶åˆ†å‘
         mEventPoller->processPendingEvents(PER_FRAME_TIME);
 
-        // »ØÊÕ¶Ï¿ªµÄËíµÀ
+        // å›æ”¶æ–­å¼€çš„éš§é“
         TunnelSet::iterator it = mBrokenTuns.begin();
         for (; it != mBrokenTuns.end(); it++)
         {

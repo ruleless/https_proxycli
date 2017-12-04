@@ -5,7 +5,7 @@
 #include "listener.h"
 #include "proxy_tunnel.h"
 
-#define PER_FRAME_TIME 1 // Ã¿¸öÂß¼­Ö¡×î¶àÍ£Áô1s
+#define PER_FRAME_TIME 1 // æ¯ä¸ªé€»è¾‘å¸§æœ€å¤šåœç•™1s
 #define CACHE_TUN_SIZE 64
 
 NAMESPACE_BEG(proxy)
@@ -55,8 +55,8 @@ class ProxyClient : public Listener::Handler, public ProxyTunnel::Handler
     bool mInited;
     bool mbLoop;
 
-    TunnelList mFreeTuns; // ¿ÕÏĞ´úÀíËíµÀ
-    TunnelSet mBrokenTuns; // ÒÑ¶Ï¿ªµÄ´úÀíËíµÀ
+    TunnelList mFreeTuns; // ç©ºé—²ä»£ç†éš§é“
+    TunnelSet mBrokenTuns; // å·²æ–­å¼€çš„ä»£ç†éš§é“
 
     char mDestIp[IPv4_SIZE];
     int mDestPort;
