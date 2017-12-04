@@ -13,6 +13,7 @@ NAMESPACE_BEG(proxy)
 class ProxyClient : public Listener::Handler, public ProxyTunnel::Handler
 {
     typedef std::list<ProxyTunnel *> TunnelList;
+    typedef std::set<ProxyTunnel *> TunnelSet;
   public:
     ProxyClient():mEventPoller(NULL)
                  ,mListener(NULL)
@@ -55,7 +56,7 @@ class ProxyClient : public Listener::Handler, public ProxyTunnel::Handler
     bool mbLoop;
 
     TunnelList mFreeTuns; // 空闲代理隧道
-    TunnelList mBrokenTuns; // 已断开的代理隧道
+    TunnelSet mBrokenTuns; // 已断开的代理隧道
 
     char mDestIp[IPv4_SIZE];
     int mDestPort;

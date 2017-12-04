@@ -76,15 +76,26 @@ bool Connection::connect(const sockaddr *sa, socklen_t salen)
         goto err_1;
     }
 
-    if (::connect(mFd, sa, salen) < 0)
+    if (::connect(mFd, sa, salen) == 0) // 连接成功
     {
-        if (errno != EINPROGRESS)
+        tryRegReadEvent();
+        mConnStatus = ConnStatus_Connected;
+        if (mHandler)
+            mHandler->onConnected(this);
+    }
+    else
+    {
+        if (errno == EINPROGRESS)
+        {
+            mConnStatus = ConnStatus_Connecting;
+            tryRegWriteEvent();
+        }
+        else
+        {
             goto err_1;
+        }
     }
 
-    tryRegWriteEvent();
-
-    mConnStatus = ConnStatus_Connecting;
     return true;
 
 err_1:

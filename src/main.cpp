@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
 
     log_initialise(AllLog);
     log_reg_console();
-    log_reg_filelog("log", "http-proxy-", "/tmp", "http-proxy-", "/tmp");
+    log_reg_filelog("log", "http-proxy-", "/tmp", "http-proxy-old-", "/tmp");
 
     if (!gProxyClient.initialise(vbindaddr[0].c_str(), atoi(vbindaddr[1].c_str())))
     {

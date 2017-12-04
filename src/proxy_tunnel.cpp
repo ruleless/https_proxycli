@@ -18,14 +18,15 @@ bool ProxyTunnel::acceptLocal(int connfd)
 
     // 连接代理服务器
     mProxyStatus = ProxyStatus_Closed;
+    mProxyConn.setEventHandler(this);
     if (!mProxyConn.connect((const sockaddr *)&mProxySvrAddr, (socklen_t)sizeof(mProxySvrAddr)))
     {
         mLocalConn.setEventHandler(NULL);
         mLocalConn.shutdown();
+        mProxyConn.setEventHandler(NULL);
         WarningPrint("[ProxyTunnel::acceptLocal] connect proxy server error.");
         return false;
     }
-    mProxyConn.setEventHandler(this);
 
     return true;
 }

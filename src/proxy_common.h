@@ -146,6 +146,7 @@ NAMESPACE_END // namespace proxy
 //--------------------------------------------------------------------------
 // 日志定义
 #ifdef _USE_KLOG
+# define DEBUG DebugPrint
 #include "log/log_inc.h"
 #else
 # define DebugPrint(fmt, ...)
@@ -153,6 +154,7 @@ NAMESPACE_END // namespace proxy
 # define WarningPrint(fmt, ...)
 # define ErrorPrint(fmt, ...)
 # define EmphasisPrint(fmt, ...)
+# define DEBUG(fmt, ...)
 #endif
 //--------------------------------------------------------------------------
 

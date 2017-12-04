@@ -48,13 +48,14 @@ void ProxyClient::finalise()
     }
     mInited = false;
 
-    TunnelList::iterator it;
-    for (it = mBrokenTuns.begin(); it != mBrokenTuns.end(); it++)
+    TunnelSet::iterator itSet;
+    for (itSet = mBrokenTuns.begin(); itSet != mBrokenTuns.end(); itSet++)
     {
-        delete *it;
+        delete *itSet;
     }
     mBrokenTuns.clear();
 
+    TunnelList::iterator it;
     for (it = mFreeTuns.begin(); it != mFreeTuns.end(); it++)
     {
         delete *it;
@@ -112,7 +113,7 @@ void ProxyClient::runLoop()
         mEventPoller->processPendingEvents(PER_FRAME_TIME);
 
         // 回收断开的隧道
-        TunnelList::iterator it = mBrokenTuns.begin();
+        TunnelSet::iterator it = mBrokenTuns.begin();
         for (; it != mBrokenTuns.end(); it++)
         {
             reclaimTunnel(*it);
@@ -136,20 +137,11 @@ void ProxyClient::onAccept(int connfd)
         return;
     }
 
-    if (!tun->acceptLocal(connfd))
-    {
-        ErrorPrint("[ProxyClient::onAccept] accept local conn failed. fd=%d", connfd);
-        close(connfd);
-        reclaimTunnel(tun);
-        return;
-    }
-
     if (!tun->setDestServer(mDestIp, mDestPort))
     {
         ErrorPrint("[ProxyClient::onAccept] set dest server failed(%s:%d). fd=%d",
                    mDestIp, mDestPort, connfd);
         close(connfd);
-        tun->cleanup();
         reclaimTunnel(tun);
         return;
     }
@@ -159,8 +151,15 @@ void ProxyClient::onAccept(int connfd)
         ErrorPrint("[ProxyClient::onAccept] set proxy server failed(%s:%d). fd=%d",
                    mProxyIp, mProxyPort, connfd);
         close(connfd);
-        tun->cleanup();
         reclaimTunnel(tun);
+        return;
+    }
+
+    if (!tun->acceptLocal(connfd))
+    {
+        ErrorPrint("[ProxyClient::onAccept] accept local conn failed. fd=%d", connfd);
+        close(connfd);
+        mBrokenTuns.insert(tun);
         return;
     }
 
@@ -173,7 +172,7 @@ void ProxyClient::onClosed(ProxyTunnel *tun)
     DebugPrint("[ProxyClient::onClosed] tun:%p closed", tun);
     tun->cleanup();
 
-    mBrokenTuns.push_back(tun);
+    mBrokenTuns.insert(tun);
 }
 
 void ProxyClient::onError(ProxyTunnel *tun)
@@ -181,7 +180,7 @@ void ProxyClient::onError(ProxyTunnel *tun)
     WarningPrint("[ProxyClient::onError] tun:%p error", tun);
     tun->cleanup();
 
-    mBrokenTuns.push_back(tun);
+    mBrokenTuns.insert(tun);
 }
 
 ProxyTunnel *ProxyClient::newTunnel()
