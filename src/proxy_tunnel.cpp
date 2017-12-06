@@ -74,12 +74,32 @@ void ProxyTunnel::onConnected(Connection *pConn)
     {
         char header[HTTP_HEADER_SIZE] = {0};
 
-        snprintf(header, sizeof(header),
-                 HTTP_METHOD_CONNECT "\r\n"
-                 HTTP_FIELD_HOST "\r\n"
-                 "\r\n",
-                 mDestSvrHost, mDestSvrPort,
-                 mDestSvrHost, mDestSvrPort);
+        if (mUsername == "")
+        {
+            snprintf(header, sizeof(header),
+                     HTTP_METHOD_CONNECT "\r\n"
+                     HTTP_FIELD_HOST "\r\n"
+                     "\r\n",
+                     mDestSvrHost, mDestSvrPort,
+                     mDestSvrHost, mDestSvrPort);
+        }
+        else
+        {
+            char buf[HTTP_LINE_SIZE];
+            char encBuf[HTTP_LINE_SIZE] = {0};
+
+            snprintf(buf, sizeof(buf), "%s:%s", mUsername.c_str(), mPassword.c_str());
+            Base64Encode((unsigned char *)buf, strlen(buf), (unsigned char *)encBuf, sizeof(encBuf) - 1);
+
+            snprintf(header, sizeof(header),
+                     HTTP_METHOD_CONNECT "\r\n"
+                     HTTP_FIELD_HOST "\r\n"
+                     BASIC_PROXY_AUTHORIZATION "\r\n"
+                     "\r\n",
+                     mDestSvrHost, mDestSvrPort,
+                     mDestSvrHost, mDestSvrPort,
+                     encBuf);
+        }
 
         mProxyStatus = ProxyStatus_Connecting;
         *mHttpHeader = '\0';

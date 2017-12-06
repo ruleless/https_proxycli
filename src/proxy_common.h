@@ -173,6 +173,7 @@ NAMESPACE_END // namespace proxy
 # define DEBUG DebugPrint
 # include "log/log_inc.h"
 #elif defined(MAC_EC)
+# include "ECLog.h"
 # define DebugPrint(fmt, ...)     LOGD("[HTTPS-PROXY]" fmt, ##__VA_ARGS__)
 # define InfoPrint(fmt, ...)      LOGI("[HTTPS-PROXY]" fmt, ##__VA_ARGS__)
 # define WarningPrint(fmt, ...)   LOGW("[HTTPS-PROXY]" fmt, ##__VA_ARGS__)
@@ -302,6 +303,21 @@ inline void split(const std::basic_string< T >& s, T c, std::vector< std::basic_
             v.push_back(buf);
     }
 }
+
+/*
+ * Do base-64 encoding on a hunk of bytes.   Return the actual number of
+ * bytes generated.  Base-64 encoding takes up 4/3 the space of the original,
+ * plus a bit for end-padding.  3/2+5 gives a safe margin.
+ */
+int Base64Encode(const unsigned char *ptr, int len, unsigned char *space, int size);
+
+/*
+ * Do base-64 decoding on a string.  Ignore any non-base64 bytes.
+ * Return the actual number of bytes generated.  The decoded size will
+ * be at most 3/4 the size of the encoded, and may be smaller if there
+ * are padding characters (blanks, newlines).
+ */
+int Base64Decode(const unsigned char *in, int inlen, unsigned char *space, int size);
 
 NAMESPACE_END // proxy
 //--------------------------------------------------------------------------

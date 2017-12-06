@@ -7,12 +7,16 @@
 #include "cache.h"
 
 #define HTTP_HEADER_SIZE           1024
+#define HTTP_LINE_SIZE             256
 
 #define HTTP_METHOD_CONNECT        "CONNECT %s:%d HTTP/1.1"
 #define HTTP_FIELD_HOST            "Host: %s:%d"
 
-#define SSL_CONNECTION_RESPONSE    "HTTP/1.0 200 Connection established"
-#define SSL_CONNECTION_RESPONSE_OK "200 Connection established"
+#define SSL_CONNECTION_RESPONSE_OK "200 Connection established"        // "HTTP/1.0 200 Connection established"
+
+// 认证相关
+#define AUTHENTICATION_REQUIRED    "407 Proxy Authentication Required" // "HTTP/1.1 407 Proxy Authentication Required"
+#define BASIC_PROXY_AUTHORIZATION  "Proxy-Authorization: Basic %s"
 
 NAMESPACE_BEG(proxy)
 
@@ -45,6 +49,8 @@ class ProxyTunnel : public Connection::Handler
             ,mProxyConn(poller)
             ,mLocalCache(NULL)
             ,mProxyStatus(ProxyStatus_Closed)
+            ,mUsername("")
+            ,mPassword("")
     {
         memset(&mProxySvrAddr, 0, sizeof(mProxySvrAddr));
         *mDestSvrHost = '\0';
@@ -100,6 +106,9 @@ class ProxyTunnel : public Connection::Handler
 
     EProxyStatus mProxyStatus;
     char mHttpHeader[HTTP_HEADER_SIZE];
+
+    std::string mUsername;
+    std::string mPassword;
 };
 
 NAMESPACE_END // proxy
