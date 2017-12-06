@@ -22,7 +22,7 @@ class ProxyClient : public Listener::Handler, public ProxyTunnel::Handler
                  ,mFreeTuns()
                  ,mBrokenTuns()
     {
-        *mDestIp = '\0';
+        *mDestHost = '\0';
         mDestPort = 0;
         *mProxyIp = '\0';
         mProxyPort = 0;
@@ -33,7 +33,7 @@ class ProxyClient : public Listener::Handler, public ProxyTunnel::Handler
     bool initialise(const char *ip, int port);
     void finalise();
 
-    bool setDestServer(const char *ip, int port);
+    bool setDestServer(const char *hostname, int port);
     bool setProxyServer(const char *ip, int port);
 
     void runLoop();
@@ -58,7 +58,7 @@ class ProxyClient : public Listener::Handler, public ProxyTunnel::Handler
     TunnelList mFreeTuns; // 空闲代理隧道
     TunnelSet mBrokenTuns; // 已断开的代理隧道
 
-    char mDestIp[IPv4_SIZE];
+    char mDestHost[ADDR_SIZE];
     int mDestPort;
 
     char mProxyIp[IPv4_SIZE];

@@ -71,17 +71,9 @@ void ProxyClient::finalise()
     mEventPoller = NULL;
 }
 
-bool ProxyClient::setDestServer(const char *ip, int port)
+bool ProxyClient::setDestServer(const char *hostname, int port)
 {
-    struct sockaddr_in tmpaddr;
-
-    if (inet_pton(AF_INET, ip, &tmpaddr.sin_addr) < 0)
-    {
-        ErrorPrint("[ProxyClient::setDestServer] illegal ip(%s).", ip);
-        return false;
-    }
-
-    snprintf(mDestIp, sizeof(mDestIp), "%s", ip);
+    snprintf(mDestHost, sizeof(mDestHost), "%s", hostname);
     mDestPort = port;
 
     return true;
@@ -137,10 +129,10 @@ void ProxyClient::onAccept(int connfd)
         return;
     }
 
-    if (!tun->setDestServer(mDestIp, mDestPort))
+    if (!tun->setDestServer(mDestHost, mDestPort))
     {
         ErrorPrint("[ProxyClient::onAccept] set dest server failed(%s:%d). fd=%d",
-                   mDestIp, mDestPort, connfd);
+                   mDestHost, mDestPort, connfd);
         close(connfd);
         reclaimTunnel(tun);
         return;

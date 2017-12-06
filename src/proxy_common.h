@@ -57,6 +57,7 @@
 #  elif TARGET_OS_IPHONE
 #  elif TARGET_OS_MAC
 #   define unix
+#   define MAC_EC
 #  else
 #   error "Unknown Apple platform"
 #  endif
@@ -107,6 +108,7 @@
 
 #define LISTENQ 32
 #define IPv4_SIZE sizeof("255.255.255.255")
+#define ADDR_SIZE 256
 //--------------------------------------------------------------------------
 
 //--------------------------------------------------------------------------
@@ -169,7 +171,14 @@ NAMESPACE_END // namespace proxy
 // 日志定义
 #ifdef _USE_KLOG
 # define DEBUG DebugPrint
-#include "log/log_inc.h"
+# include "log/log_inc.h"
+#elif defined(MAC_EC)
+# define DebugPrint(fmt, ...)     LOGD("[HTTPS-PROXY]" fmt, ##__VA_ARGS__)
+# define InfoPrint(fmt, ...)      LOGI("[HTTPS-PROXY]" fmt, ##__VA_ARGS__)
+# define WarningPrint(fmt, ...)   LOGW("[HTTPS-PROXY]" fmt, ##__VA_ARGS__)
+# define ErrorPrint(fmt, ...)     LOGE("[HTTPS-PROXY]" fmt, ##__VA_ARGS__)
+# define EmphasisPrint(fmt, ...)  LOGE("[HTTPS-PROXY]" fmt, ##__VA_ARGS__)
+# define DEBUG(fmt, ...)          LOGD("[HTTPS-PROXY]" fmt, ##__VA_ARGS__)
 #else
 # define DebugPrint(fmt, ...)
 # define InfoPrint(fmt, ...)

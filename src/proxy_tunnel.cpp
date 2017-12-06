@@ -48,24 +48,16 @@ bool ProxyTunnel::setProxyServer(const char *ip, int port)
     mProxySvrAddr.sin_port = htons(port);
     if (inet_pton(AF_INET, ip, &mProxySvrAddr.sin_addr) < 0)
     {
-        ErrorPrint("[ProxyTunnel::setDestServer] illegal ip(%s).", ip);
+        ErrorPrint("[ProxyTunnel::setProxyServer] illegal ip(%s).", ip);
         return false;
     }
 
     return true;
 }
 
-bool ProxyTunnel::setDestServer(const char *ip, int port)
+bool ProxyTunnel::setDestServer(const char *hostname, int port)
 {
-    struct sockaddr_in tmpaddr;
-
-    if (inet_pton(AF_INET, ip, &tmpaddr.sin_addr) < 0)
-    {
-        ErrorPrint("[ProxyTunnel::setProxyServer] illegal ip(%s).", ip);
-        return false;
-    }
-
-    snprintf(mDestSvrIp, sizeof(mDestSvrIp), "%s", ip);
+    snprintf(mDestSvrHost, sizeof(mDestSvrHost), "%s", hostname);
     mDestSvrPort = port;
 
     return true;
@@ -86,8 +78,8 @@ void ProxyTunnel::onConnected(Connection *pConn)
                  HTTP_METHOD_CONNECT "\r\n"
                  HTTP_FIELD_HOST "\r\n"
                  "\r\n",
-                 mDestSvrIp, mDestSvrPort,
-                 mDestSvrIp, mDestSvrPort);
+                 mDestSvrHost, mDestSvrPort,
+                 mDestSvrHost, mDestSvrPort);
 
         mProxyStatus = ProxyStatus_Connecting;
         *mHttpHeader = '\0';

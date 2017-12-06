@@ -47,7 +47,7 @@ class ProxyTunnel : public Connection::Handler
             ,mProxyStatus(ProxyStatus_Closed)
     {
         memset(&mProxySvrAddr, 0, sizeof(mProxySvrAddr));
-        *mDestSvrIp = '\0';
+        *mDestSvrHost = '\0';
         mDestSvrPort = 0;
         *mHttpHeader = '\0';
 
@@ -64,7 +64,7 @@ class ProxyTunnel : public Connection::Handler
     void cleanup();
 
     bool setProxyServer(const char *ip, int port);
-    bool setDestServer(const char *ip, int port);
+    bool setDestServer(const char *hostname, int port);
 
     void setHandler(Handler *h);
 
@@ -95,7 +95,7 @@ class ProxyTunnel : public Connection::Handler
     MyCache *mLocalCache;
 
     sockaddr_in mProxySvrAddr; // 代理服务器地址
-    char mDestSvrIp[IPv4_SIZE]; // 目标服务器IP
+    char mDestSvrHost[ADDR_SIZE]; // 目标服务器地址
     int mDestSvrPort; // 目标服务器端口
 
     EProxyStatus mProxyStatus;
